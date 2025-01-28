@@ -21,7 +21,7 @@ def fetch_coordinates(apikey, address):
 
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lon, lat
+    return lat, lon  
 
 
 def distance_coffee_house(coffee_distance):
@@ -31,9 +31,10 @@ def distance_coffee_house(coffee_distance):
 def main():
     load_dotenv()
 
-    apikey = os.environ["YANDEX_API"]    
+    apikey = os.environ["YANDEX_API"]
 
     entering_location = input("Где вы находитесь? ")
+
     coords = fetch_coordinates(apikey, entering_location)
 
     with open("coffee.json", "r", encoding="CP1251") as my_file:
@@ -45,31 +46,32 @@ def main():
     for coffee_house in coffee:
         name = coffee_house["Name"]
         coordinates_coffee = coffee_house["geoData"]["coordinates"]
-        coffee_coords = (coordinates_coffee[0], coordinates_coffee[1])
+        coffee_coords = (coordinates_coffee[1], coordinates_coffee[0]) 
         mileage = (distance.distance(coords, coffee_coords).km)
 
         coffee_with_distance.append({
             "title": name,
             "distance": mileage,
-            "latitude": coordinates_coffee[1],
-            "longitude": coordinates_coffee[0]
+            "latitude": coffee_coords[0],  
+            "longitude": coffee_coords[1], 
         })
 
     sorted_coffee_house = sorted(coffee_with_distance, key=distance_coffee_house)
 
     slice_coffee_house = sorted_coffee_house[:5]
 
-    m = folium.Map(location=(coords[1], coords[0]), zoom_start=15)
+    m = folium.Map(location=(coords[0], coords[1]), zoom_start=15) 
 
     for coffee_house in slice_coffee_house:
         coffee_coords = (coffee_house["latitude"], coffee_house["longitude"])
         folium.Marker(
             location=coffee_coords,
             tooltip="Кофан здесь",
-            popup=coffee_house["title"]
+            popup=coffee_house["title"],
+            icon=folium.Icon(icon="mug-hot", prefix='fa', color="black")
         ).add_to(m)
 
-    m.save("index.html")   
+    m.save("index.html")
 
 
 if __name__ == '__main__':
